@@ -2,6 +2,7 @@ package com.example.oranges;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -13,9 +14,11 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -29,10 +32,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.VideoView;
 
 import java.util.Arrays;
 
+import static android.app.Activity.RESULT_OK;
+
 public class CameraFragment extends Fragment implements View.OnClickListener {
+
+    private static final int REQUEST_VIDEO_CAPTURE = 1;
 
     private int cameraNumber = 0;
     private CameraDevice cameraDevice;
@@ -46,6 +54,9 @@ public class CameraFragment extends Fragment implements View.OnClickListener {
 
     private ImageReader imageReader;
     private TextureView textureView;
+    private VideoView videoView;
+
+    private LayoutInflater layoutInflater;
 
     public CameraFragment() {
     }
@@ -53,8 +64,11 @@ public class CameraFragment extends Fragment implements View.OnClickListener {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+
+        this.layoutInflater = inflater;
         View layout = inflater.inflate(R.layout.fragment_camera, container, false);
 
+        videoView = layout.findViewById(R.id.videoView);
         ImageView photoView = layout.findViewById(R.id.photoView);
         textureView = layout.findViewById(R.id.texturView);
 
@@ -65,6 +79,18 @@ public class CameraFragment extends Fragment implements View.OnClickListener {
                 closeCamera();
                 cameraNumber++;
                 startCamera();
+            }
+        });
+
+        Button recordButton = layout.findViewById(R.id.record_button);
+        recordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+                if (takeVideoIntent.resolveActivity(layoutInflater.getContext().getPackageManager()) != null) {
+                    startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
+                }
             }
         });
 
@@ -225,5 +251,16 @@ public class CameraFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View v) {
 
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
+            Uri videoUri = intent.getData();
+            videoView.setVisibility(View.VISIBLE);
+            videoView.setVideoURI(videoUri);
+            videoView.start();
+        }
+        super.onActivityResult(requestCode, resultCode, intent);
     }
 }
