@@ -9,7 +9,6 @@ class BEView(View):
         return HttpResponse("hello world")
 
     def post(self, request):
-        print(request.FILES)
         if 'myImage' in request.FILES:
             print("it's here yo")
             print(request.FILES['myImage'])
